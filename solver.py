@@ -40,8 +40,6 @@ class Solver:
 
     def newstep(self, rn):
         rn1 = self.errest
-        #rn = self.errest[i]
-        #rn1 = self.errest[i-1]
         self.h = min(
             ((self.tol / rn)**(2/(3*self.k)) * (self.tol / rn1)**(-1/(3*self.k)) * self.h),
             self.ivp.T - self.grid[-1]
@@ -62,14 +60,6 @@ class Solver:
                     pbar.refresh()
                     i += 1
 
-#         if not self.adaptive:
-#             for i in range(self.N):
-#                 self.step(i)
-#         else:
-#             i = 0
-#             while (self.grid[-1] < self.ivp.T):
-#                 self.step(i)
-#                 i += 1
         return np.array(self.grid), self.us
 
 
@@ -158,7 +148,6 @@ class RK34(Solver):
 
         Z3 = self.ivp.f(tn + self.h, un - self.h*(2*Y2 - Y1))
 
-        #self.errest = np.append(self.errest, np.array([sp.linalg.norm(self.h/6 * (2 * Y2 + Z3 - 2*Y3 - Y4))]), axis=0)
         error = sp.linalg.norm(self.h/6 * (2 * Y2 + Z3 - 2*Y3 - Y4))
         self.us = np.column_stack((self.us, (un + self.h/6 * (Y1 + 2*Y2 + 2*Y3 + Y4))))
 

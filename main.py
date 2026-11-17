@@ -113,6 +113,28 @@ def plot_stiffness():
     plt.loglog(mus, [mu**2 for mu in mus], label="Reference quadratic")
     plt.legend()
 
+def plot_task22():
+    N = 1000
+    A = np.array([[3, 1], [5, 2]])
+    y0 = np.array([0.7, 1.3])
+    ivp = LTE(t0=t0, T=T, y0=y0, A=A)
+    a = 3
+    b = 9
+    c = 15
+    d = 15
+    y0 = np.array([1.5 * d/c, 0.5*a/b])
+
+    plt.figure()
+
+    solver1 = ExplicitEuler(ivp, N)
+    plotLogLog(ivp, solver1, label="Euler")
+
+    solver2 = RK4(ivp, N)
+    plotLogLog(ivp, solver2, label="RK4")
+    plt.legend()
+
+
+
 
 if __name__ == "__main__":
     #plot_stiffness()

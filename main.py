@@ -4,6 +4,38 @@ from ivp import *
 from solver import *
 from evaluator import *
 
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
+    "text.latex.preamble": (
+        r"\usepackage{amsmath}"
+    ),
+})
+
+def array_to_latex(arr, format_spec=".2f"):
+  """Converts a 1D or 2D numpy array into a LaTeX bmatrix string.
+
+  Parameters:
+  - arr: numpy.ndarray (1D or 2D)
+  - format_spec: string format specifier for numbers (default: '.2f')
+  """
+  arr = np.asarray(arr)
+
+  if arr.ndim == 1:
+    elements = [f"{x:{format_spec}}" for x in arr]
+    return r"\begin{bmatrix} " + " & ".join(elements) + r" \end{bmatrix}"
+
+  elif arr.ndim == 2:
+    rows = []
+    for row in arr:
+      elements = [f"{x:{format_spec}}" for x in row]
+      rows.append(" & ".join(elements))
+    return r"\begin{bmatrix} " + r" \\ ".join(rows) + r" \end{bmatrix}"
+
+  else:
+    raise ValueError("Only 1D and 2D arrays are supported.")
+
 def plotErrorExact(ivp, solver : Solver, label = "testing", plot_exact = True, plot_error = True):
     if plot_exact:
         ts = np.linspace(0, 1, 1000)
@@ -28,21 +60,15 @@ def plotErrorExact(ivp, solver : Solver, label = "testing", plot_exact = True, p
     # errs = eval.errvstime()
     # plt.scatter(grid, errs)
 
-def plotLotka(ivp : IVP, solver : Solver, label = "testing", plot_exact = True, plot_error = True):
-    if plot_exact:
-        ts = np.linspace(0, 1, 1000)
-        ys = [ivp.exact(t) for t in ts]
-        plt.plot(ts , ys, label="Exact solution")
+def plotLotka(ivp : IVP, solver : Solver, label = "testing", title = ""):
+    plt.title(f"Approximate solution of Lotka Volterra IVP  - {title}")
+    plt.ylabel("population")
+    plt.xlabel("time (s)")
 
     grid, us = solver.integrate()
     animals = ["Rabbit", "Fox"]
     for i, row in enumerate(us):
-        plt.scatter(grid, row, label=f"{label} - {animals[i]}")
-
-    eval = Evaluator(ivp, solver)
-    if plot_error:
-        errs = eval.errvstime()
-        plt.scatter(grid, errs, label=f"Error: {label}")
+        plt.plot(grid, row, label=f"{label} - {animals[i]}")
 
 def plotVanDerPol(ivp : IVP, solver : Solver, label = "testing"):
     plt.figure()
@@ -51,9 +77,11 @@ def plotVanDerPol(ivp : IVP, solver : Solver, label = "testing"):
     plt.plot(grid, us[1], label=f"{label}")
 
 
-def plotPhasePortrait(ivp : IVP, solver : Solver, label = "testing"):
+def plotPhasePortrait(ivp : IVP, solver : Solver, label = "testing", axislabels = ["Rabbit", "Fox"]):
+    plt.title("Phase portrait")
     _, us = solver.integrate()
-    animals = ["Rabbit", "Fox"]
+    plt.xlabel(axislabels[0])
+    plt.ylabel(axislabels[1])
     plt.scatter(us[0], us[1], label=f"{label}")
 
 def plotLotkaInvariance(ivp : LotkaVolterra, solver : Solver):
@@ -67,9 +95,9 @@ def plotLogLog(ivp, solver, Ns = 2 ** np.arange(4, 10), label="placeholder"):
     eval = Evaluator(ivp, solver)
     hs, errs = eval.errvsh(Ns)
     slope = (np.log(errs[-1]) - np.log(errs[0]))/(np.log(hs[-1]) - np.log(hs[0]))
-    plt.loglog(hs, errs, label=f"{label}, Order: {slope:.2f}")
+    plt.loglog(hs, errs, label=f"{label}, Order: ${slope:.2f}$")
     plt.xlabel("h")
-    plt.ylabel("error")
+    plt.ylabel("Error")
 
 def plot_stiffness():
     rk34 = []
@@ -114,29 +142,53 @@ def plot_stiffness():
     plt.legend()
 
 def plot_task22():
+    t0 = 0
+    T = 1
     N = 1000
     A = np.array([[3, 1], [5, 2]])
     y0 = np.array([0.7, 1.3])
     ivp = LTE(t0=t0, T=T, y0=y0, A=A)
-    a = 3
-    b = 9
-    c = 15
-    d = 15
-    y0 = np.array([1.5 * d/c, 0.5*a/b])
-
     plt.figure()
+    plt.title(r"Error over step size")
 
     solver1 = ExplicitEuler(ivp, N)
-    plotLogLog(ivp, solver1, label="Euler")
+    plotLogLog(ivp, solver1, label="Explicit Euler")
 
     solver2 = RK4(ivp, N)
     plotLogLog(ivp, solver2, label="RK4")
     plt.legend()
 
+def plot_task32():
+    t0 = 0
+    T = 15
+    a = 3
+    b = 9
+    c = 15
+    d = 15
+    y0 = np.array([1.5 * d/c, 0.5*a/b])
+    N = 1000
+    ivp = LotkaVolterra(t0, T, y0, a, b, c, d)
 
+    solver = RK34(ivp, N)
 
+    plotLotka(ivp, solver, label="RK34", title=f"$a = {a}$, $b = {b}$, $c = {c}$, $d = {d}$, $y_0 = {array_to_latex(y0)}$")
+    plt.legend()
+
+    plt.figure()
+    for factor in [1.1, 1.5, 2.0]:
+        y0 = np.array([factor * d/c, a/b/factor])
+        ivp = LotkaVolterra(t0, T, y0, a, b, c, d)
+        solver = RK34(ivp, N)
+        plotPhasePortrait(ivp, solver, label=f"RK34, $y_0 = {array_to_latex(y0)}$")
+    plt.legend()
+
+    plt.figure()
+    plotLotkaInvariance(ivp, solver)
+    plt.legend()
+ 
 
 if __name__ == "__main__":
+    plot_task32()
     #plot_stiffness()
     #A = np.array([[3, 1], [5, 2]])
         #y0 = np.array([0.7, 1.3])
@@ -167,13 +219,14 @@ if __name__ == "__main__":
 
     #plt.figure()
     #plotLotkaInvariance(ivp, solver2)
-    mu = 10000
-    t0 = 0
-    T = 0.7*mu
-    y0 = np.array([2, 0])
-    ivp = VanDerPol(t0, T, y0, mu)
-    sol_bdf = sp.integrate.solve_ivp(ivp.f, [t0, T], y0, atol=1e-6, method="BDF")
-    plt.plot(sol_bdf.t, sol_bdf.y[1])
+    # plt.figure()
+    # mu = 10000
+    # t0 = 0
+    # T = 0.7*mu
+    # y0 = np.array([2, 0])
+    # ivp = VanDerPol(t0, T, y0, mu)
+    # sol_bdf = sp.integrate.solve_ivp(ivp.f, [t0, T], y0, atol=1e-6, method="BDF")
+    # plt.plot(sol_bdf.t, sol_bdf.y[1])
 
     plt.show()
 

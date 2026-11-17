@@ -5,7 +5,7 @@ import scipy as sp
 from ivp import IVP
 
 class Solver:
-    def __init__(self, ivp : IVP, N : int, tol=0.05, adaptive = False, k=0):
+    def __init__(self, ivp : IVP, N : int, tol=1e-6, adaptive = False, k=0):
         self.ivp = ivp
         self.N = N
         self.tol = tol
@@ -134,7 +134,6 @@ class RK4(Solver):
 class RK34(Solver):
     def __init__(self, ivp : IVP, N : int, tol : float = 1e-6):
         super().__init__(ivp, N, k=4, adaptive=True, tol=tol)
-        
         
     def step(self, i):
         un = self.us[:,i]

@@ -47,23 +47,41 @@ def plotLotka(ivp : IVP, solver : Solver):
         plt.plot(grid, row, label=f"{solver.label} - {animals[i]}")
 
 def plotVanDerPol(ivp : IVP, solver : Solver, label = "testing"):
-    plt.figure()
     grid, us = solver.integrate()
-    plt.plot(grid[:-1], np.log(np.diff(grid)), label="Step size")
-    plt.plot(grid, us[1], label=f"{label}")
+    fig, ax1 = plt.subplots()
+
+    ax1.set_xlabel('Time (s)')
+    ax1.set_ylabel("$y_2$")
+    ax1.plot(grid, us[1], label=f"$y_2$, {solver.label}", color="blue")
+
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('Step size')
+    ax2.set_yscale('log')
+    ax2.plot(grid[:-1], np.diff(grid), label=f"Step size, {solver.label}", color="red")
+
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="best")
+    fig.tight_layout()
+    plt.title(f"Approx. Solution (+ step size) to {ivp.label}")
 
 def plotPhasePortrait(ivp : IVP, solver : Solver, label = "testing", axislabels = ["Rabbit", "Fox"]):
-    plt.title("Phase portrait")
+    plt.title(f"Phase portrait of {ivp.label}")
     _, us = solver.integrate()
     plt.xlabel(axislabels[0])
     plt.ylabel(axislabels[1])
     plt.scatter(us[0], us[1], label=f"{label}")
 
 def plotLotkaInvariance(ivp : LotkaVolterra, solver : Solver):
+    plt.figure()
+    plt.title(f"Invariance of {ivp.label}")
+    plt.xlabel("Time")
+    plt.ylabel(r"$\vert \frac{H}{H_0} - 1 \vert$")
     grid, us = solver.integrate()
     H0 = ivp.H(us[0,0], us[1,0])
     Hs = np.array([abs(ivp.H(us[0,i], us[1,i])/H0 - 1) for i in range(len(grid))])
-    plt.semilogy(grid, Hs)
+    plt.semilogy(grid, Hs, label=solver.label)
+    plt.legend()
 
 def plotLogLog(ivp, solver, Ns = 2 ** np.arange(4, 10), label="placeholder"):
     eval = Evaluator(ivp, solver)
@@ -84,7 +102,7 @@ def plot_stiffness():
             T = 0.7*mu
             y0 = np.array([2, 0])
             ivp = VanDerPol(t0, T, y0, mu)
-            solver = RK34(ivp, N=100)
+            solver = RK34(ivp)
 
             try:
                 grid, _ = solver.integrate()
@@ -109,6 +127,9 @@ def plot_stiffness():
 
         
     plt.figure()
+    plt.title("Steps needed to approx. vdP depending on $\\mu$/stiffness")
+    plt.xlabel("$\\mu$")
+    plt.ylabel("Steps")
     plt.loglog(mus, rk34, label="Steps over mu, RK34")
     plt.loglog(mus, rk45, label="Steps over mu, RK45")
     plt.loglog(mus, bdf, label="Steps over mu, BDF")
@@ -162,6 +183,29 @@ def plot_task32():
     plotLotkaInvariance(ivp, solver)
     plt.legend()
  
+def plot_task41():
+    mu = 100
+    t0 = 0
+    T = 2 * mu
+    y0 = np.array([2,0])
+    ivp = VanDerPol(t0, T, y0, mu)
+    solver = RK34(ivp)
+    #plotVanDerPol(ivp, solver)
+# , np.array([-1,2])
+    y0s = [np.array([2, 50]), np.array([-2, 20])]
+    plt.figure()
+    axislabels=["$y_1$", "$y_2$"]
+    plt.xlabel(axislabels[0])
+    plt.ylabel(axislabels[1])
+    for y0 in y0s:
+        ivp = VanDerPol(t0, T, y0, mu)
+        solver = RK34(ivp)
+        _, us = solver.integrate()
+        plt.scatter(us[0], us[1], label=f"$y_0 = {array_to_latex(y0)}$", s=5, alpha=0.7)
+
+    plt.legend()
+    plt.title(f"Phase portrait different $y_0$ for van der Pol")
+
 
 if __name__ == "__main__":
     t0 = 0
@@ -174,41 +218,19 @@ if __name__ == "__main__":
     solver1 = ExplicitEuler(ivp, N=50)
     solver2 = RK4(ivp, N=50)
 
-    plotErrorExact(ivp, [solver1, solver2])
+    #plotErrorExact(ivp, [solver1, solver2])
 
     a = 3
     b = 9
     c = 15
     d = 15
     y0 = np.array([1.5 * d/c, 0.5*a/b])
+    T = 150
 
-#    ivp = LotkaVolterra(t0, T, y0, a, b, c, d)
+    ivp = LotkaVolterra(t0, T, y0, a, b, c, d)
+    solver = RK34(ivp)
 
-    #solver1 = ExplicitEuler(ivp, N)
-    #plotLogLog(ivp, solver1, label="Euler")
-
-    #solver2 = RK34(ivp, N)
-    #plotLogLog(ivp, solver2, label="RK4")
-
-    #plot_error = False
-    #plotLotka(ivp, solver1, label="Explicit Euler", plot_exact=False, plot_error=plot_error)
-   # plotVanDerPol(ivp, solver2, label="RK34")
-   # plt.legend()
-
-   # plt.figure()
-   # plotPhasePortrait(ivp, solver2, label="RK34")
-   # plt.legend()
-
-    #plt.figure()
-    #plotLotkaInvariance(ivp, solver2)
-    # plt.figure()
-    # mu = 10000
-    # t0 = 0
-    # T = 0.7*mu
-    # y0 = np.array([2, 0])
-    # ivp = VanDerPol(t0, T, y0, mu)
-    # sol_bdf = sp.integrate.solve_ivp(ivp.f, [t0, T], y0, atol=1e-6, method="BDF")
-    # plt.plot(sol_bdf.t, sol_bdf.y[1])
+    #plotLotkaInvariance(ivp, solver)
 
     plt.show()
 

@@ -5,7 +5,7 @@ import scipy as sp
 from ivp import IVP
 
 class Solver:
-    def __init__(self, ivp : IVP, N : int, tol=1e-6, adaptive = False, k=0):
+    def __init__(self, ivp : IVP, N : int = 0, tol=1e-6, adaptive = False, k=0):
         self.ivp = ivp
         self.N = N
         self.tol = tol
@@ -138,8 +138,8 @@ class RK4(Solver):
         self.us[:,i+1] = un + self.h/6 * (Y1 + 2*Y2 + 2*Y3 + Y4)
 
 class RK34(Solver):
-    def __init__(self, ivp : IVP, N : int, tol : float = 1e-6):
-        super().__init__(ivp, N, k=4, adaptive=True, tol=tol)
+    def __init__(self, ivp : IVP, tol : float = 1e-6):
+        super().__init__(ivp, k=4, adaptive=True, tol=tol)
         self.label = f"RK34: $tol={tol:.2e}$"
         
     def step(self, i):

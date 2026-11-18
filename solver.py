@@ -13,6 +13,7 @@ class Solver:
         self.us[:,0] = self.ivp.y0
         self.k = k
         self.adaptive = adaptive
+        self.label = "placeholder solver label"
 
         if not self.adaptive:
             self.grid = np.linspace(ivp.t0, ivp.T, N+1)
@@ -66,6 +67,7 @@ class Solver:
 class ExplicitEuler(Solver):
     def __init__(self, ivp : IVP, N : int):
         super().__init__(ivp, N)
+        self.label = f"Explicit Euler: $N={N}$"
 
     def step(self, i):
         un = self.us[:,i]
@@ -76,6 +78,7 @@ class ExplicitEuler(Solver):
 class ImplicitEulerLTE(Solver):
     def __init__(self, ivp : IVP, N : int):
         super().__init__(ivp, N)
+        self.label = f"Implicit Euler: $N={N}$"
 
     def step(self, i):
         un = self.us[:,i]
@@ -84,6 +87,7 @@ class ImplicitEulerLTE(Solver):
 class ImplicitEuler(Solver):
     def __init__(self, ivp: IVP, N: int):
         super().__init__(ivp, N)
+        self.label = f"Implicit Euler: $N={N}$"
 
     def step(self, i):
         un = self.us[:,i]
@@ -94,6 +98,7 @@ class ImplicitEuler(Solver):
 class TrapezoidalLTE(Solver):
     def __init__(self, ivp : IVP, N : int):
         super().__init__(ivp, N)
+        self.label = f"Trapezoidal Rule: $N={N}$"
 
     def step(self, i):
         A = self.ivp.A
@@ -104,6 +109,7 @@ class TrapezoidalLTE(Solver):
 class ExplicitLaTa(Solver):
     def __init__(self, ivp : IVP, N : int):
         super().__init__(ivp, N)
+        self.label = f"Larsson-Tangden: $N={N}$"
 
     def step(self, i):
         u = self.us[:,i]
@@ -117,8 +123,8 @@ class ExplicitLaTa(Solver):
 
 class RK4(Solver):
     def __init__(self, ivp : IVP, N : int):
-
         super().__init__(ivp, N)
+        self.label = f"RK4: $N={N}$"
         
     def step(self, i):
         un = self.us[:,i]
@@ -134,6 +140,7 @@ class RK4(Solver):
 class RK34(Solver):
     def __init__(self, ivp : IVP, N : int, tol : float = 1e-6):
         super().__init__(ivp, N, k=4, adaptive=True, tol=tol)
+        self.label = f"RK34: $tol={tol:.2e}$"
         
     def step(self, i):
         un = self.us[:,i]

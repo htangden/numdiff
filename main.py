@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from ivp import *
 from solver import *
 from evaluator import *
+from helper import *
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -13,69 +14,43 @@ plt.rcParams.update({
     ),
 })
 
-def array_to_latex(arr, format_spec=".2f"):
-  """Converts a 1D or 2D numpy array into a LaTeX bmatrix string.
+def plotErrorExact(ivp : IVP, solvers : list[Solver], plot_error = True):
+    plt.figure()
+    plt.title(f"Approximate solution to {ivp.label}")
 
-  Parameters:
-  - arr: numpy.ndarray (1D or 2D)
-  - format_spec: string format specifier for numbers (default: '.2f')
-  """
-  arr = np.asarray(arr)
+    ts = np.linspace(0, 1, 1000)
+    ys = [ivp.exact(t) for t in ts]
+    plt.plot(ts , ys, label="Exact solution")
 
-  if arr.ndim == 1:
-    elements = [f"{x:{format_spec}}" for x in arr]
-    return r"\begin{bmatrix} " + " & ".join(elements) + r" \end{bmatrix}"
+    for solver in solvers:
+        label = solver.label
+        grid, us = solver.integrate()
+        for i, row in enumerate(us):
+            plt.scatter(grid, row, label=f"{label}")
 
-  elif arr.ndim == 2:
-    rows = []
-    for row in arr:
-      elements = [f"{x:{format_spec}}" for x in row]
-      rows.append(" & ".join(elements))
-    return r"\begin{bmatrix} " + r" \\ ".join(rows) + r" \end{bmatrix}"
+        eval = Evaluator(ivp, solver)
+        if plot_error:
+            errs = eval.errvstime()
+            plt.scatter(grid, errs, label=f"Error: {label}")
 
-  else:
-    raise ValueError("Only 1D and 2D arrays are supported.")
+    plt.legend()
 
-def plotErrorExact(ivp, solver : Solver, label = "testing", plot_exact = True, plot_error = True):
-    if plot_exact:
-        ts = np.linspace(0, 1, 1000)
-        ys = [ivp.exact(t) for t in ts]
-        plt.plot(ts , ys, label="Exact solution")
-
-    grid, us = solver.integrate()
-    for i, row in enumerate(us):
-        plt.scatter(grid, row, label=f"{label}")
-
-    eval = Evaluator(ivp, solver)
-    if plot_error:
-        errs = eval.errvstime()
-        plt.scatter(grid, errs, label=f"Error: {label}")
-
-    # lata = ImplicitEulerLTE(ivp=ivp, N = N)
-    # grid, us = lata.integrate()
-    # for row in us:
-    #     plt.scatter(grid, row)
-
-    # eval = Evaluator(ivp, lata)
-    # errs = eval.errvstime()
-    # plt.scatter(grid, errs)
-
-def plotLotka(ivp : IVP, solver : Solver, label = "testing", title = ""):
-    plt.title(f"Approximate solution of Lotka Volterra IVP  - {title}")
+def plotLotka(ivp : IVP, solver : Solver):
+    plt.figure()
+    plt.title(f"Approximate solution to {ivp.label}")
     plt.ylabel("population")
-    plt.xlabel("time (s)")
+    plt.xlabel("time")
 
     grid, us = solver.integrate()
     animals = ["Rabbit", "Fox"]
     for i, row in enumerate(us):
-        plt.plot(grid, row, label=f"{label} - {animals[i]}")
+        plt.plot(grid, row, label=f"{solver.label} - {animals[i]}")
 
 def plotVanDerPol(ivp : IVP, solver : Solver, label = "testing"):
     plt.figure()
     grid, us = solver.integrate()
     plt.plot(grid[:-1], np.log(np.diff(grid)), label="Step size")
     plt.plot(grid, us[1], label=f"{label}")
-
 
 def plotPhasePortrait(ivp : IVP, solver : Solver, label = "testing", axislabels = ["Rabbit", "Fox"]):
     plt.title("Phase portrait")
@@ -89,7 +64,6 @@ def plotLotkaInvariance(ivp : LotkaVolterra, solver : Solver):
     H0 = ivp.H(us[0,0], us[1,0])
     Hs = np.array([abs(ivp.H(us[0,i], us[1,i])/H0 - 1) for i in range(len(grid))])
     plt.semilogy(grid, Hs)
-
 
 def plotLogLog(ivp, solver, Ns = 2 ** np.arange(4, 10), label="placeholder"):
     eval = Evaluator(ivp, solver)
@@ -157,6 +131,8 @@ def plot_task22():
     solver2 = RK4(ivp, N)
     plotLogLog(ivp, solver2, label="RK4")
     plt.legend()
+    
+    plt.figure()
 
 def plot_task32():
     t0 = 0
@@ -171,7 +147,7 @@ def plot_task32():
 
     solver = RK34(ivp, N)
 
-    plotLotka(ivp, solver, label="RK34", title=f"$a = {a}$, $b = {b}$, $c = {c}$, $d = {d}$, $y_0 = {array_to_latex(y0)}$")
+    plotLotka(ivp, solver)
     plt.legend()
 
     plt.figure()
@@ -188,17 +164,23 @@ def plot_task32():
  
 
 if __name__ == "__main__":
-    plot_task32()
-    #plot_stiffness()
-    #A = np.array([[3, 1], [5, 2]])
-        #y0 = np.array([0.7, 1.3])
-    #ivp = LTE(t0=t0, T=T, y0=y0, A=A)
-    #ivp = SquareIVP(t0=t0, T=T, y0=y0)
-#     a = 3
-#     b = 9
-#     c = 15
-#     d = 15
-#     y0 = np.array([1.5 * d/c, 0.5*a/b])
+    t0 = 0
+    T = 1
+    A = np.array([[3, 1], [5, 2]])
+    y0 = np.array([0.7, 1.3])
+
+    ivp = LTE(t0=t0, T=T, y0=y0, A=A)
+
+    solver1 = ExplicitEuler(ivp, N=50)
+    solver2 = RK4(ivp, N=50)
+
+    plotErrorExact(ivp, [solver1, solver2])
+
+    a = 3
+    b = 9
+    c = 15
+    d = 15
+    y0 = np.array([1.5 * d/c, 0.5*a/b])
 
 #    ivp = LotkaVolterra(t0, T, y0, a, b, c, d)
 
@@ -230,6 +212,5 @@ if __name__ == "__main__":
 
     plt.show()
 
-    #plt.legend(["2euler", "2trap"," 3euler", "3trap"])
 
 

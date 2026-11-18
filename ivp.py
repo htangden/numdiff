@@ -3,6 +3,7 @@ import scipy as sp
 import scipy.linalg
 import matplotlib.pyplot as plt
 from collections.abc import Callable
+from helper import *
 
 class IVP:
     def __init__(self, t0 : int, T : int, y0 : np.ndarray):
@@ -10,6 +11,7 @@ class IVP:
         self.T = T
         self.y0 = y0
         self.A = np.zeros((y0.shape[0], y0.shape[0]))
+        self.label = "IVP: placeholder"
 
     def f(self, t, y):
         raise NotImplementedError
@@ -22,6 +24,7 @@ class LTE(IVP):
     def __init__(self, t0, T, y0, A):
         super().__init__(t0, T, y0)
         self.A = A
+        self.label = f"LTE: $A = {array_to_latex(self.A)}$, $y_0 = {array_to_latex(self.y0)}$" 
 
     def f(self, t, y):
         return self.A @ y
@@ -50,6 +53,7 @@ class LotkaVolterra(IVP):
         self.b = b
         self.c = c
         self.d = d
+        self.label = f"Lotka-Volterra: $a = {a}$, $b = {b}$, $c = {c}$, $d = {d}$, $y_0 = {array_to_latex(y0)}$"
 
     def f(self, t, y):
         xp = self.a * y[0] - self.b * y[0] * y[1]
@@ -63,6 +67,7 @@ class VanDerPol(IVP):
     def __init__(self, t0, T, y0, mu):
         super().__init__(t0, T, y0)
         self.mu = mu
+        self.label = f"van der Pol: $\\mu = {mu}$, $y_0 = {y0}$"
 
     def f(self, t, y):
         y1p = y[1]

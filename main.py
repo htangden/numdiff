@@ -147,10 +147,10 @@ def plot_task22():
     plt.title(r"Error over step size")
 
     solver1 = ExplicitEuler(ivp, N)
-    plotLogLog(ivp, solver1, label="Explicit Euler")
+    plotLogLog(ivp, solver1, label=solver1.label)
 
     solver2 = RK4(ivp, N)
-    plotLogLog(ivp, solver2, label="RK4")
+    plotLogLog(ivp, solver2, label=solver2.label)
     plt.legend()
     
     plt.figure()
@@ -216,7 +216,7 @@ if __name__ == "__main__":
     ivp = LTE(t0=t0, T=T, y0=y0, A=A)
 
     solver1 = ExplicitEuler(ivp, N=50)
-    solver2 = RK4(ivp, N=50)
+    solver2 = RK34(ivp)
 
     #plotErrorExact(ivp, [solver1, solver2])
 
